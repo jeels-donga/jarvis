@@ -1,6 +1,6 @@
 // Core Elements
 const turn_on = document.querySelector("#turn_on");
-const jarvis_intro = document.querySelector("#j_intro");
+const nova_intro = document.querySelector("#n_intro");
 const timeDisplay = document.querySelector("#time");
 const batteryDisplay = document.querySelector("#battery");
 const internetDisplay = document.querySelector("#internet");
@@ -11,6 +11,7 @@ const setupForm = document.querySelector("#setup_form");
 const commandsList = document.querySelector("#commands_list");
 
 // State
+let isAwake = false;
 let isStopping = false;
 let charge = 100;
 let chargeStatus = "unplugged";
@@ -18,8 +19,8 @@ let connectivity = "online";
 let userData = JSON.parse(localStorage.getItem("jarvis_setup") || "{}");
 
 // Commands List (Simplified for UI display)
-const jarvisCommands = [
-  "Hi Jarvis",
+const novaCommands = [
+  "Hi Nova",
   "Tell about yourself",
   "What's the weather",
   "Open YouTube/Google/Github",
@@ -34,7 +35,7 @@ window.onload = () => {
   setInterval(updateDateTime, 1000);
 
   // Commands List
-  jarvisCommands.forEach(cmd => {
+  novaCommands.forEach(cmd => {
     commandsList.innerHTML += `<p># ${cmd}</p>`;
   });
 
@@ -46,13 +47,30 @@ window.onload = () => {
   if (!localStorage.getItem("jarvis_setup")) {
     setupForm.style.display = "flex";
   } else {
-    fetchWeather(userData.location);
+    initWeather();
     readOut("Systems online. Ready for your command, sir.");
+
+    // Auto-start recognition
+    setTimeout(() => {
+      try {
+        recognition.start();
+      } catch (e) {
+        console.log("Waiting for user interaction to start recognition...");
+        updateResponse("CLICK ANYWHERE TO SYNC SYSTEMS");
+        // Fallback: Start on first click anywhere if browser blocks auto-start
+        document.body.addEventListener('click', () => {
+          if (!isStopping) {
+            recognition.start();
+            readOut("Systems synchronized. Ready for your command, sir.");
+          }
+        }, { once: true });
+      }
+    }, 2000);
   }
 };
 
 // --- UI Feedback Functions ---
-function setJarvisState(state) {
+function setNovaState(state) {
   reactor.classList.remove("listening", "processing");
   if (state === "listening") reactor.classList.add("listening");
   if (state === "processing") reactor.classList.add("processing");
@@ -101,17 +119,45 @@ function initConnectivity() {
 }
 
 // --- Weather (Using existing API key from original code) ---
-function fetchWeather(location) {
+function initWeather() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        fetchWeather({ lat: latitude, lon: longitude });
+      },
+      (error) => {
+        console.warn("Geolocation failed or denied. Falling back to manual location.", error);
+        fetchWeather({ location: userData.location });
+      }
+    );
+  } else {
+    fetchWeather({ location: userData.location });
+  }
+}
+
+function fetchWeather({ location, lat, lon }) {
   const key = "48ddfe8c9cf29f95b7d0e54d6e171008";
-  fetch(`https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${key}&units=metric`)
+  let url = `https://api.openweathermap.org/data/2.5/weather?appid=${key}&units=metric`;
+
+  if (lat && lon) {
+    url += `&lat=${lat}&lon=${lon}`;
+  } else if (location) {
+    url += `&q=${location}`;
+  } else {
+    return; // No location source provided
+  }
+
+  fetch(url)
     .then(res => res.json())
     .then(data => {
       if (data.cod === 200) {
         document.querySelector("#location").textContent = `Location: ${data.name}`;
-        document.querySelector("#weatherT").textContent = `Temp: ${data.main.temp}°C`;
+        document.querySelector("#weatherT").textContent = `Temp: ${data.main.temp.toFixed(1)}°C`;
         document.querySelector("#weatherD").textContent = `Condition: ${data.weather[0].description}`;
       }
-    });
+    })
+    .catch(err => console.error("Weather fetch failed:", err));
 }
 
 // --- Setup Form ---
@@ -128,8 +174,11 @@ document.querySelector("#sub_btn").addEventListener("click", () => {
     localStorage.setItem("jarvis_setup", JSON.stringify(data));
     userData = data;
     setupForm.style.display = "none";
-    fetchWeather(data.location);
+    initWeather();
     readOut(`Welcome back, ${data.name}. Systems initialized.`);
+    setTimeout(() => {
+      try { recognition.start(); } catch (e) { }
+    }, 2000);
   } else {
     readOut("Sir, please provide the required identification parameters.");
   }
@@ -139,13 +188,13 @@ document.querySelector("#sub_btn").addEventListener("click", () => {
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
 recognition.continuous = true;
+recognition.continuous = true;
 recognition.lang = 'en-US';
+recognition.interimResults = false; // Ensure we only get final results for command processing
 
 recognition.onstart = () => {
   setJarvisState("listening");
   updateResponse("LISTENING...");
-  document.querySelector("#start_jarvis_btn").style.display = "none";
-  document.querySelector("#stop_jarvis_btn").style.display = "flex";
 };
 
 recognition.onend = () => {
@@ -154,23 +203,40 @@ recognition.onend = () => {
   } else {
     setJarvisState(null);
     updateResponse("DEACTIVATED");
-    document.querySelector("#start_jarvis_btn").style.display = "flex";
-    document.querySelector("#stop_jarvis_btn").style.display = "none";
   }
 };
 
 recognition.onresult = (event) => {
   const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
   updateResponse(transcript, true);
-  handleCommand(transcript);
+
+  const wakeWords = ["nova", "hello nova", "wakeup nova"];
+  let foundWakeWord = wakeWords.find(word => transcript.startsWith(word));
+
+  if (foundWakeWord) {
+    // Stage 1: Wake Word Detected
+    isAwake = true;
+    readOut("Yes sir? I am listening.");
+    setNovaState("listening");
+    updateResponse("WAITING FOR COMMAND...");
+
+    // We ignore any command that might be in the same transcript to force the two-step flow
+    return;
+  }
+
+  if (isAwake) {
+    // Stage 2: Assistant is awake, process this transcript as a command
+    handleCommand(transcript);
+    isAwake = false; // Reset to standby after one command
+  }
 };
 
 // --- Command Handling ---
 async function handleCommand(command) {
-  setJarvisState("processing");
+  setNovaState("processing");
 
   // Casual/Hardcoded
-  if (command.includes("hi jarvis") || command.includes("hello jarvis")) {
+  if (command.includes("hi nova") || command.includes("hello nova")) {
     readOut("Hello sir, how can I assist you today?");
     return;
   }
@@ -237,7 +303,7 @@ async function getGroqResponse(prompt) {
         messages: [
           {
             role: "system",
-            content: "You are Jarvis, a highly intelligent AI assistant. Respond concisely and professionally."
+            content: "You are Nova, a highly intelligent AI assistant. Respond concisely and professionally."
           },
           {
             role: "user",
@@ -262,20 +328,51 @@ async function getGroqResponse(prompt) {
 }
 
 // --- Voice Output ---
+// Pre-load voices for better reliability
+let availableVoices = [];
+window.speechSynthesis.onvoiceschanged = () => {
+  availableVoices = window.speechSynthesis.getVoices();
+};
+
 function readOut(message) {
+  if (!message) return;
+
   const speech = new SpeechSynthesisUtterance();
   speech.text = message;
   speech.volume = 1;
   speech.rate = 0.9;
   speech.pitch = 1;
 
-  // Attempt to find a "male" or "cool" voice
-  const voices = window.speechSynthesis.getVoices();
-  speech.voice = voices.find(v => v.name.includes("Google UK English Male")) || voices[0];
+  // Sync voices if not already loaded
+  if (availableVoices.length === 0) {
+    availableVoices = window.speechSynthesis.getVoices();
+  }
+
+  // Attempt to find a "male" or "English" voice
+  let voice = availableVoices.find(v => v.name.includes("Google UK English Male")) ||
+    availableVoices.find(v => v.lang.startsWith("en") && v.name.includes("Male")) ||
+    availableVoices.find(v => v.lang.startsWith("en")) ||
+    availableVoices[0];
+
+  if (voice) speech.voice = voice;
+
+  // Pause recognition while speaking to prevent Jarvis hearing himself
+  speech.onstart = () => {
+    try { recognition.stop(); } catch (e) { }
+  };
+
+  speech.onend = () => {
+    try { if (!isStopping) recognition.start(); } catch (e) { }
+    setJarvisState(null);
+  };
+
+  speech.onerror = (e) => {
+    console.error("Speech Error:", e);
+    setJarvisState(null);
+  };
 
   window.speechSynthesis.speak(speech);
   updateResponse(message);
-  setJarvisState(null);
 }
 
 // --- Particle Background ---
@@ -337,14 +434,8 @@ animateParticles();
 
 // --- End Particle Background ---
 
-// Controls
-document.querySelector("#start_jarvis_btn").addEventListener("click", () => {
-  isStopping = false;
-  recognition.start();
-  turn_on.play();
-});
-
-document.querySelector("#stop_jarvis_btn").addEventListener("click", () => {
+// Global Deactivate (Optional feature, remains for command handling use)
+function deactivateNova() {
   isStopping = true;
   recognition.stop();
-});
+}
