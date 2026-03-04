@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Advanced Jarvis AI Assistant">
+  <title>JARVIS AI</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./arc_reactor.css">
+  <link rel="icon" href="./iron-pic.png">
+</head>
+
+<body>
+  <audio src="./Jarvis.mp3" id="j_intro"></audio>
+  <audio src="./power up.mp3" id="turn_on"></audio>
+
+  <div class="status-bar">
+    <div class="stat-item">
+      <img src="./clock1.png" alt="Time">
+      <span id="time">00:00:00</span>
+    </div>
+    <div class="stat-item">
+      <img src="./internet1.png" alt="Internet">
+      <span id="internet">Online</span>
+    </div>
+    <div class="stat-item">
+      <img src="./battery1.png" alt="Battery">
+      <span id="battery">100%</span>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <div class="main-content">
+      <div class="weather-panel">
+        <h2 class="orbitron">SYSTEM STATUS</h2>
+        <div id="weather-info">
+          <p id="location">Location: Sensing...</p>
+          <p id="weatherT">Temp: --°C</p>
+          <p id="weatherD">Condition: --</p>
+        </div>
+      </div>
+
+      <div class="reactor-container" id="reactor">
+        <div class="reactor-outer"></div>
+        <div class="reactor-inner">
+          <div class="reactor-core"></div>
+          <div class="reactor-coils">
+            <div class="coil"></div>
+            <div class="coil"></div>
+            <div class="coil"></div>
+            <div class="coil"></div>
+            <div class="coil"></div>
+            <div class="coil"></div>
+            <div class="coil"></div>
+            <div class="coil"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="response-container">
+        <p id="transcript"></p>
+        <div id="response-text" class="orbitron">AWAITING COMMAND SIR...</div>
+      </div>
+
+      <div class="controls">
+        <button id="start_jarvis_btn">
+          <span class="orbitron">Activate</span>
+        </button>
+        <button id="stop_jarvis_btn" style="display: none;">
+          <span class="orbitron">Deactivate</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="jarvis_setup" id="setup_form">
+    <h2 class="orbitron">INITIALIZING...</h2>
+    <label>Your Name</label>
+    <input type="text" placeholder="Enter Name">
+    <label>Location</label>
+    <input type="text" placeholder="City Name">
+    <label>GitHub Profile</label>
+    <input type="text" placeholder="Username">
+    <button id="sub_btn">Establish Link</button>
+  </div>
+
+  <div class="commands" id="commands_list">
+    <h3 class="orbitron">COMMAND PROTOCOLS</h3>
+    <br>
+  </div>
+
+  <img src="./heart.gif" class="heart-gif" alt="System Core">
+
+  <script src="./app.js"></script>
+</body>
+
+</html>

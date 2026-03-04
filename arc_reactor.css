@@ -1,0 +1,100 @@
+:root {
+  --jarvis-blue: #00d2ff;
+  --jarvis-dark: #0a0a0a;
+  --glow-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+}
+
+.reactor-container {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 30px auto;
+  filter: drop-shadow(0 0 10px var(--jarvis-blue));
+}
+
+.reactor-outer {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 4px solid #1a1a1a;
+  box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+  animation: rotate 10s linear infinite;
+}
+
+.reactor-inner {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 2px solid var(--jarvis-blue);
+  box-shadow: inset 0 0 20px var(--jarvis-blue);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle, rgba(0, 210, 255, 0.2) 0%, transparent 70%);
+}
+
+.reactor-core {
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 40px var(--jarvis-blue), 0 0 60px var(--jarvis-blue);
+  z-index: 2;
+}
+
+.reactor-coils {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.coil {
+  position: absolute;
+  width: 12px;
+  height: 100%;
+  background: repeating-linear-gradient(transparent, transparent 10px, #333 10px, #333 15px);
+  transform-origin: center;
+}
+
+/* Create 8 coils using for loop logic (CSS hardcoding for simplicity) */
+.coil:nth-child(1) { transform: rotate(0deg); }
+.coil:nth-child(2) { transform: rotate(45deg); }
+.coil:nth-child(3) { transform: rotate(90deg); }
+.coil:nth-child(4) { transform: rotate(135deg); }
+.coil:nth-child(5) { transform: rotate(180deg); }
+.coil:nth-child(6) { transform: rotate(225deg); }
+.coil:nth-child(7) { transform: rotate(270deg); }
+.coil:nth-child(8) { transform: rotate(315deg); }
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* States for Jarvis activity */
+.listening .reactor-inner {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.processing .reactor-core {
+  animation: processing-spin 0.5s linear infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes processing-spin {
+  0% { filter: brightness(1) blur(0px); }
+  50% { filter: brightness(1.5) blur(2px); }
+  100% { filter: brightness(1) blur(0px); }
+}
