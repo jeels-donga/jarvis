@@ -348,9 +348,10 @@ function readOut(message) {
     availableVoices = window.speechSynthesis.getVoices();
   }
 
-  // Attempt to find a "male" or "English" voice
-  let voice = availableVoices.find(v => v.name.includes("Google UK English Male")) ||
-    availableVoices.find(v => v.lang.startsWith("en") && v.name.includes("Male")) ||
+  // Attempt to find a "female" or "English" voice
+  let voice = availableVoices.find(v => v.name.includes("Google UK English Female")) ||
+    availableVoices.find(v => v.name.includes("Microsoft Zira")) || // Common female voice on Windows
+    availableVoices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("female")) ||
     availableVoices.find(v => v.lang.startsWith("en")) ||
     availableVoices[0];
 
