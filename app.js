@@ -124,6 +124,7 @@ document.querySelector("#sub_btn").addEventListener("click", () => {
   };
 
   if (data.name && data.location) {
+    if (inputs[3].value) data.groq_key = inputs[3].value;
     localStorage.setItem("jarvis_setup", JSON.stringify(data));
     userData = data;
     setupForm.style.display = "none";
@@ -206,13 +207,30 @@ async function handleCommand(command) {
 }
 
 // --- Groq AI Integration ---
+function getApiKey() {
+  // 1. Check userData (saved in localStorage)
+  if (userData.groq_key) return userData.groq_key;
+
+  // 2. Check global variable from modules/keys.js
+  if (typeof GROQ_API_KEY !== 'undefined') return GROQ_API_KEY;
+
+  return null;
+}
+
 async function getGroqResponse(prompt) {
+  const apiKey = getApiKey();
+
+  if (!apiKey) {
+    setupForm.style.display = "flex";
+    return "Sir, my cognitive interface is offline. Please provide a Groq API Key in the system setup and established a link.";
+  }
+
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_API_KEY}`
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
