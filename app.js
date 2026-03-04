@@ -1,3 +1,5 @@
+import { GROQ_API_KEY } from "./modules/keys.js";
+
 // Core Elements
 const turn_on = document.querySelector("#turn_on");
 const jarvis_intro = document.querySelector("#j_intro");
@@ -198,64 +200,52 @@ async function handleCommand(command) {
     return;
   }
 
-  // Default: Gemini LLM Integration
+  // Default: Groq LLM Integration
   updateResponse("THINKING...");
-  const aiResponse = await getGeminiResponse(command);
+  const aiResponse = await getGroqResponse(command);
   readOut(aiResponse);
   updateResponse(aiResponse);
 }
 
-// --- Gemini AI Integration ---
-async function getGeminiResponse(prompt) {
-  const API_KEY = "AIzaSyDwGUhC-0_0kE8HFdUQYvwsRfrjfhIsAzY";
-
+// --- Groq AI Integration ---
+async function getGroqResponse(prompt) {
   if (window.location.protocol === "file:") {
     return "Sir, I cannot access my cognitive modules while running from a file pool. Please launch me using a local server (Live Server) to bypass security restrictions.";
   }
 
-  // Best chance: try the stable v1 endpoint first, then fallback to v1beta
-  const endpoints = [
-    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`
-  ];
-
-  let lastError = "";
-
-  for (const url of endpoints) {
-    try {
-      console.log(`Diagnostic: Connecting to endpoint...`);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `You are Jarvis, a highly intelligent AI assistant. Respond concisely to: ${prompt}` }] }]
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.candidates[0].content.parts[0].text;
-      }
-
-      const errorData = await response.json();
-      lastError = errorData.error ? errorData.error.message : response.statusText;
-      console.warn(`Endpoint failed:`, lastError);
-    } catch (error) {
-      console.error(`Connection failure:`, error);
-      lastError = `Network Error - Likely restricted by browser security.`;
-    }
-  }
-
-  return `Sir, the cognitive interface failed. Detail: ${lastError}. Ensure you are using a Local Server and your API key is active.`;
-}
-
-async function listAllModels(key) {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-    const data = await response.json();
-    console.log("DIAGNOSTIC - Available Models for this Key:", data.models ? data.models.map(m => m.name) : data);
-  } catch (e) {
-    console.error("Diagnostic failure:", e);
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: "You are Jarvis, a highly intelligent AI assistant. Respond concisely and professionally."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices[0].message.content;
+    }
+
+    const errorData = await response.json();
+    const lastError = errorData.error ? errorData.error.message : response.statusText;
+    return `Sir, the cognitive interface failed. Detail: ${lastError}`;
+  } catch (error) {
+    console.error(`Connection failure:`, error);
+    return `Sir, a network error occurred. Please ensure your Groq API key is valid and you are online.`;
   }
 }
 
