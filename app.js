@@ -207,10 +207,6 @@ async function handleCommand(command) {
 
 // --- Groq AI Integration ---
 async function getGroqResponse(prompt) {
-  if (window.location.protocol === "file:") {
-    return "Sir, I cannot access my cognitive modules while running from a file pool. Please launch me using a local server (Live Server) to bypass security restrictions.";
-  }
-
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -243,7 +239,7 @@ async function getGroqResponse(prompt) {
     return `Sir, the cognitive interface failed. Detail: ${lastError}`;
   } catch (error) {
     console.error(`Connection failure:`, error);
-    return `Sir, a network error occurred. Please ensure your Groq API key is valid and you are online.`;
+    return `Sir, a network error occurred (${error.message || 'Check Console'}). Protocol: ${window.location.protocol}. Ensure you are using a Local Server if direct file opening fails.`;
   }
 }
 
