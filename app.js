@@ -1,5 +1,3 @@
-import { GROQ_API_KEY } from "./modules/keys.js";
-
 // Core Elements
 const turn_on = document.querySelector("#turn_on");
 const jarvis_intro = document.querySelector("#j_intro");
